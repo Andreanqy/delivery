@@ -2,63 +2,106 @@
 
 #include "Source.h"
 
+using namespace System;
+using namespace System::Windows::Forms;
+
+ref class Structure;
+
 // —труктура, котора€ описывает точки на карте
-value struct MyPoint
+ref class MyPoint
 {
 public:
+	int number;
 	int x, y;
-	char type; // 0 - склад, 1 - магазин, 2 - дом, 3 - перекресток
-	System::Collections::Generic::List<MyPoint>^ points;
+	array<MyPoint^>^ to_points;
+	Structure^ structure;
+	MyPoint(int num, int x, int y, char type);
 };
 
 //  ласс, которые описывает транспортные средства
 ref class Transport
 {
 public:
+	delegate void LoadEventHandler(Transport^ sender, Structure^ target);
+	event LoadEventHandler^ LoadEvent;
+	delegate void UnloadEventHandler(Transport^ sender, Structure^ target);
+	event UnloadEventHandler^ UnloadEvent;
 	void move();
 private:
-	void print_picture();
-	void choose_new_point();
-	void start_event();
-	int speed;
-	int x, y;
 	int index; // «анул€ть, при создании нового points_path
-	int step;
 	bool isMoving;
 	Direction direction;
-	MyPoint& departure_point;
-	MyPoint& destination_point;
-	array<MyPoint>^ points_path;
-	System::Windows::Forms::PictureBox^ picBox;
-	System::Windows::Forms::Control^ par;
+	array<MyPoint^>^ points_path;
+	void print_picture();
+	void choose_new_point();
+	virtual void start_event();
+protected:
+	int x, y;
+	int step;
 	String^ name;
+	MyPoint^ departure_point;
+	MyPoint^ destination_point;
+	System::Windows::Forms::Control^ par;
+	System::Windows::Forms::PictureBox^ pic_box;
+};
+
+//  ласс, который описывает велосипедистов, доставл€ющих товары
+ref class Bicycle : Transport
+{
+public:
+	Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point);
+private:
+	void start_event() override;
+};
+
+//  ласс, который описывает машины, доставл€ющие товары
+ref class Car : Transport
+{
+public:
+	Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point);
+private:
+	void start_event() override;
 };
 
 //  ласс, который описывает здани€
-class Structure
+ref class Structure
 {
 public:
-	const MyPoint& point;
+	const MyPoint^ point;
+	Structure(MyPoint^ point);
+	Structure();
+	virtual void subscribe_if_relevant(Transport^ t);
 };
 
 //  ласс, который описывает работу склада
-class Warehouse : Structure
+ref class Warehouse : Structure
 {
 public:
-	void load();
+	Warehouse(int number_point_car);
+	void subscribe_if_relevant(Transport^ t) override;
+private:
+	void load(Transport^ sender, Structure^ target);
 };
 
 //  ласс, который описывает работу магазина
-class Store : Structure
+ref class Store : Structure
 {
 public:
-	void load();
-	void unload();
+	MyPoint^ bicycle_point;
+	MyPoint^ car_point;
+	Store(int num_point_bicycle, int num_point_car);
+	void subscribe_if_relevant(Transport^ t) override;
+private:
+	void load(Transport^ sender, Structure^ target);
+	void unload(Transport^ sender, Structure^ target);
 };
 
 //  ласс, который описывает работу дома-получател€
-class House : Structure
+ref class House : Structure
 {
 public:
-	void unload();
+	House(int num_point_bicycle);
+	void subscribe_if_relevant(Transport^ t) override;
+private:
+	void unload(Transport^ sender, Structure^ target);
 };
