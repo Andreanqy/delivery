@@ -42,6 +42,9 @@ namespace delivery
 			}
 		}
 	public:
+		// Заменить
+		static System::String^ path_to_resource = "C:\\Users\\Андрей\\Desktop\\ВУЗ\\ИТ\\Марюс\\delivery\\";
+
 		static array<MyPoint^>^ points_car = gcnew array<MyPoint^>(0); // Массив точек маршрутов для машин
 		static array<MyPoint^>^ points_bicycle = gcnew array<MyPoint^>(0); // Массив точек маршрутов для велосипедистов
 
@@ -78,10 +81,10 @@ namespace delivery
 #pragma endregion
 	private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e)
 	{
-		points_car = file_to_points("points_car.txt");
-		file_to_reach_lists("reach_lists_car.txt", points_car);
-		points_bicycle= file_to_points("points_bicycle.txt");
-		file_to_reach_lists("reach_lists_bicycle.txt", points_bicycle);
+		points_car = file_to_points(path_to_resource + "points_car.txt");
+		file_to_reach_lists(path_to_resource + "reach_lists_car.txt", points_car);
+		points_bicycle= file_to_points(path_to_resource + "points_bicycle.txt");
+		file_to_reach_lists(path_to_resource + "reach_lists_bicycle.txt", points_bicycle);
 
 		Warehouse^ wh = gcnew Warehouse(0);
 		Store^ st1 = gcnew Store(0, 2);
@@ -92,9 +95,9 @@ namespace delivery
 		House^ h4 = gcnew House(12);
 		House^ h5 = gcnew House(16);
 
-		Car^ car = gcnew Car(130, 500, points_car[1], points_car[7]);
-		Bicycle^ bicycle_1 = gcnew Bicycle(465, 300, points_bicycle[16], points_bicycle[12]);
-		Bicycle^ bicycle_2 = gcnew Bicycle(100, 250, points_bicycle[13], points_bicycle[11]);
+		Car^ car = gcnew Car(130, 500, points_car[1], points_car[7], this);
+		Bicycle^ bicycle_1 = gcnew Bicycle(465, 300, points_bicycle[16], points_bicycle[12], this);
+		Bicycle^ bicycle_2 = gcnew Bicycle(100, 250, points_bicycle[13], points_bicycle[11], this);
 
 		array<Structure^>^ structures = { wh, st1, st2, h1, h2, h3, h4, h5 };
 		array<Transport^>^ transports = { car, bicycle_1, bicycle_2 };

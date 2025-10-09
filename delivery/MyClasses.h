@@ -19,14 +19,17 @@ public:
 };
 
 //  ласс, которые описывает транспортные средства
-ref class Transport
+ref class Transport abstract
 {
 public:
 	delegate void LoadEventHandler(Transport^ sender, Structure^ target);
 	event LoadEventHandler^ LoadEvent;
+
 	delegate void UnloadEventHandler(Transport^ sender, Structure^ target);
 	event UnloadEventHandler^ UnloadEvent;
+
 	void move();
+	virtual void start_event() = 0;
 private:
 	int index; // «анул€ть, при создании нового points_path
 	bool isMoving;
@@ -34,7 +37,6 @@ private:
 	array<MyPoint^>^ points_path;
 	void print_picture();
 	void choose_new_point();
-	virtual void start_event();
 protected:
 	int x, y;
 	int step;
@@ -49,8 +51,7 @@ protected:
 ref class Bicycle : Transport
 {
 public:
-	Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point);
-private:
+	Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 	void start_event() override;
 };
 
@@ -58,19 +59,18 @@ private:
 ref class Car : Transport
 {
 public:
-	Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point);
-private:
+	Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 	void start_event() override;
 };
 
 //  ласс, который описывает здани€
-ref class Structure
+ref class Structure abstract
 {
 public:
 	const MyPoint^ point;
 	Structure(MyPoint^ point);
 	Structure();
-	virtual void subscribe_if_relevant(Transport^ t);
+	virtual void subscribe_if_relevant(Transport^ t) = 0;
 };
 
 //  ласс, который описывает работу склада

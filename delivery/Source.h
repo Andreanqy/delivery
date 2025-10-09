@@ -1,7 +1,5 @@
 #pragma once
 
-#include "MyClasses.h"
-
 using namespace System;
 using namespace System::Drawing;
 using namespace System::Windows::Forms;

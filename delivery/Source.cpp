@@ -1,4 +1,5 @@
 #include "Source.h"
+#include "MyClasses.h"
 
 // Функция, которая преобразует значение Direction в значение String
 System::String^ string(Direction direction)
@@ -9,6 +10,7 @@ System::String^ string(Direction direction)
 	case Down: return "Down"; break;
 	case Left: return "Left"; break;
 	case Right: return "Right"; break;
+	default: return "Up";
 	}
 }
 
@@ -16,7 +18,7 @@ System::String^ string(Direction direction)
 template<typename Mas, typename El> Mas mas_add(Mas old_mas, int& mas_size, El new_element) {
 	int n = mas_size + 1;
 	Mas new_mas = gcnew array<El>(n);
-	for (int i = 0; i < mas_ize; i++) new_mas[i] = old_mas[i];
+	for (int i = 0; i < mas_size; i++) new_mas[i] = old_mas[i];
 	new_mas[mas_size] = new_element;
 	mas_size = n;
 	delete old_mas;
@@ -25,7 +27,7 @@ template<typename Mas, typename El> Mas mas_add(Mas old_mas, int& mas_size, El n
 
 // Функция, которая создает из строки точку
 MyPoint^ str_to_point(String^ str) {
-	double k = 0.87;
+	//double k = 0.87;
 	str += " ";
 	int number = -1, x = -1, y = -1, type = -1;
 	int count = 0;
@@ -37,7 +39,7 @@ MyPoint^ str_to_point(String^ str) {
 		else {
 			count++;
 			if (count == 1 && temp_str != "") number = Convert::ToInt32(temp_str);
-			else if (count == 2 && temp_str != "") x = Convert::ToInt32(temp_str) * k; // * k
+			else if (count == 2 && temp_str != "") x = Convert::ToInt32(temp_str); // * k
 			else if (count == 3 && temp_str != "") y = Convert::ToInt32(temp_str);
 			else if (count == 4 && temp_str != "") type = Convert::ToInt32(temp_str);
 			else count--;

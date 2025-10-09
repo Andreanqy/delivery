@@ -49,7 +49,7 @@ void Transport::print_picture()
 	pic_box->Location = System::Drawing::Point(x - pic_box->Size.Width/2, y - pic_box->Size.Height/2);
 }
 
-Bicycle::Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point)
+Bicycle::Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent)
 {
 	this->x = x;
 	this->y = y;
@@ -57,18 +57,17 @@ Bicycle::Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_po
 	this->destination_point = destination_point;
 	this->pic_box = gcnew System::Windows::Forms::PictureBox();
 	this->pic_box->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
-	this->pic_box->Image = Image::FromFile("bicycle_Up.png");
+	this->pic_box->Image = Image::FromFile(delivery::MyForm::path_to_resource + "bicycle_Up.png");
 	this->pic_box->Location = System::Drawing::Point(x - 10, y - 20);
 	this->pic_box->BackColor = System::Drawing::Color::Transparent;
 	this->pic_box->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Zoom;
 	this->pic_box->MaximumSize = System::Drawing::Size(20, 40);
 	this->pic_box->Size = System::Drawing::Size(20, 40);
 	this->pic_box->Show();
-	//parent->Controls->Add(pic_box);
-	//par = parent;
+	parent->Controls->Add(pic_box);
 }
 
-Car::Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point)
+Car::Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent)
 {
 	this->x = x;
 	this->y = y;
@@ -76,15 +75,14 @@ Car::Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point)
 	this->destination_point = destination_point;
 	this->pic_box = gcnew System::Windows::Forms::PictureBox();
 	this->pic_box->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
-	this->pic_box->Image = Image::FromFile("car_Up.png");
+	this->pic_box->Image = Image::FromFile(delivery::MyForm::path_to_resource + "car_Up.png");
 	this->pic_box->Location = System::Drawing::Point(x - 20, y - 40);
 	this->pic_box->BackColor = System::Drawing::Color::Transparent;
 	this->pic_box->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Zoom;
 	this->pic_box->MaximumSize = System::Drawing::Size(40, 80);
 	this->pic_box->Size = System::Drawing::Size(40, 80);
 	this->pic_box->Show();
-	//parent->Controls->Add(pic_box);
-	//par = parent;
+	parent->Controls->Add(pic_box);
 }
 
 void Bicycle::start_event()
@@ -134,17 +132,13 @@ void Store::subscribe_if_relevant(Transport^ t)
 {
 	if (Bicycle^ bicycle = dynamic_cast<Bicycle^>(t))
 		bicycle->LoadEvent += gcnew Transport::LoadEventHandler(this, &Store::load);
+	if (Car^ car = dynamic_cast<Car^>(t))
+		car->UnloadEvent += gcnew Transport::UnloadEventHandler(this, &Store::unload);
 }
 
 void Store::load(Transport^ sender, Structure^ target)
 {
 	if (target == this) { /*Загрузка велосипедиста*/ }
-}
-
-void Store::subscribe_if_relevant(Transport^ t)
-{
-	if (Car^ car = dynamic_cast<Car^>(t))
-		car->UnloadEvent += gcnew Transport::UnloadEventHandler(this, &Store::unload);
 }
 
 void Store::unload(Transport^ sender, Structure^ target)
