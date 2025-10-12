@@ -48,11 +48,20 @@ namespace delivery
 		static array<MyPoint^>^ points_car = gcnew array<MyPoint^>(0); // Массив точек маршрутов для машин
 		static array<MyPoint^>^ points_bicycle = gcnew array<MyPoint^>(0); // Массив точек маршрутов для велосипедистов
 
+		static array<Structure^>^ structures;
+		static array<Transport^>^ transports;
+	private: System::Windows::Forms::Timer^ general_timer;
+
+	public:
+	private: System::ComponentModel::IContainer^ components;
+
+	public:
+
 	private:
 		/// <summary>
 		/// Обязательная переменная конструктора.
 		/// </summary>
-		System::ComponentModel::Container ^components;
+
 
 #pragma region Windows Form Designer generated code
 		/// <summary>
@@ -61,8 +70,15 @@ namespace delivery
 		/// </summary>
 		void InitializeComponent(void)
 		{
+			this->components = (gcnew System::ComponentModel::Container());
 			System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(MyForm::typeid));
+			this->general_timer = (gcnew System::Windows::Forms::Timer(this->components));
 			this->SuspendLayout();
+			// 
+			// general_timer
+			// 
+			this->general_timer->Enabled = true;
+			this->general_timer->Tick += gcnew System::EventHandler(this, &MyForm::general_timer_Tick);
 			// 
 			// MyForm
 			// 
@@ -70,7 +86,7 @@ namespace delivery
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackgroundImage = (cli::safe_cast<System::Drawing::Image^>(resources->GetObject(L"$this.BackgroundImage")));
 			this->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Zoom;
-			this->ClientSize = System::Drawing::Size(547, 524);
+			this->ClientSize = System::Drawing::Size(564, 561);
 			this->DoubleBuffered = true;
 			this->Name = L"MyForm";
 			this->Text = L"MyForm";
@@ -95,16 +111,27 @@ namespace delivery
 		House^ h4 = gcnew House(12);
 		House^ h5 = gcnew House(16);
 
-		Car^ car = gcnew Car(130, 500, points_car[1], points_car[7], this);
-		Bicycle^ bicycle_1 = gcnew Bicycle(465, 300, points_bicycle[16], points_bicycle[12], this);
-		Bicycle^ bicycle_2 = gcnew Bicycle(100, 250, points_bicycle[13], points_bicycle[11], this);
+		Car^ car = gcnew Car(130, 440, points_car[7], points_car[2], this);
+		Bicycle^ bicycle_1 = gcnew Bicycle(100, 405, points_bicycle[14], points_bicycle[0], this);
+		Bicycle^ bicycle_2 = gcnew Bicycle(400, 465, points_bicycle[21], points_bicycle[11], this);
 
-		array<Structure^>^ structures = { wh, st1, st2, h1, h2, h3, h4, h5 };
-		array<Transport^>^ transports = { car, bicycle_1, bicycle_2 };
+		structures = gcnew array<Structure^> { wh, st1, st2, h1, h2, h3, h4, h5 };
+		transports = gcnew array<Transport^> { car, bicycle_1, bicycle_2 };
 
 		for each (Structure^ s in structures)
 			for each (Transport^ t in transports)
 				s->subscribe_if_relevant(t);
+
+		auto check = transports;
 	}
-	};
+	private: System::Void general_timer_Tick(System::Object^ sender, System::EventArgs^ e)
+	{
+		for each (Transport ^ t in transports)
+			t->move();
+	}
+	private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e)
+	{
+		auto check = transports;
+	}
+};
 }

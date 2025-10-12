@@ -4,6 +4,7 @@
 
 using namespace System;
 using namespace System::Windows::Forms;
+using namespace System::Collections::Generic;
 
 ref class Structure;
 
@@ -28,15 +29,17 @@ public:
 	delegate void UnloadEventHandler(Transport^ sender, Structure^ target);
 	event UnloadEventHandler^ UnloadEvent;
 
+	Transport(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 	void move();
 	virtual void start_event() = 0;
+	array<MyPoint^>^ create_path(MyPoint^ departure_point, MyPoint^ global_destination_point);
 private:
 	int index; // Занулять, при создании нового points_path
 	bool isMoving;
 	Direction direction;
 	array<MyPoint^>^ points_path;
 	void print_picture();
-	void choose_new_point();
+	void choose_new_destination_point();
 protected:
 	int x, y;
 	int step;

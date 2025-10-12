@@ -9,13 +9,15 @@ MyPoint::MyPoint(int num, int x, int y, char type) {
 
 void Transport::move()
 {
-	switch (direction)
+	if (isMoving)
 	{
-	case Up: y -= step; break;
-	case Down: y += step; break;
-	case Left: x -= step; break;
-	case Right: x += step; break;
-	default:
+		switch (direction)
+		{
+		case Up: y -= step; break;
+		case Down: y += step; break;
+		case Left: x -= step; break;
+		case Right: x += step; break;
+		}
 		if (direction == Up && destination_point->y >= y ||
 			direction == Down && destination_point->y <= y ||
 			direction == Left && destination_point->x >= x ||
@@ -24,14 +26,55 @@ void Transport::move()
 			x = destination_point->x;
 			y = destination_point->y;
 			isMoving = points_path->Length != ++index;
-			if (isMoving) choose_new_point();
+			if (isMoving) choose_new_destination_point();
 			else start_event();
 		}
 		print_picture();
 	}
 }
 
-void Transport::choose_new_point()
+array<MyPoint^>^ Transport::create_path(MyPoint^ departure_point, MyPoint^ global_destination_point)
+{
+	System::Collections::Generic::Queue<MyPoint^>^ queue = gcnew System::Collections::Generic::Queue<MyPoint^>();
+	System::Collections::Generic::Dictionary<int, MyPoint^>^ cameFrom = gcnew System::Collections::Generic::Dictionary<int, MyPoint^>();
+	System::Collections::Generic::HashSet<int>^ visited = gcnew System::Collections::Generic::HashSet<int>();
+
+	queue->Enqueue(departure_point);
+	visited->Add(departure_point->number);
+	cameFrom->Add(departure_point->number, nullptr);
+
+	while (queue->Count > 0)
+	{
+		MyPoint^ current = queue->Dequeue();
+
+		if (current->number == global_destination_point->number)
+		{
+			System::Collections::Generic::List<MyPoint^>^ path = gcnew System::Collections::Generic::List<MyPoint^>();
+			MyPoint^ step = current;
+			while (step != nullptr)
+			{
+				path->Add(step);
+				step = cameFrom[step->number];
+			}
+			path->Reverse();
+			return path->ToArray();
+		}
+
+		for each (MyPoint ^ neighbor in current->to_points)
+		{
+			if (!visited->Contains(neighbor->number))
+			{
+				visited->Add(neighbor->number);
+				cameFrom->Add(neighbor->number, current);
+				queue->Enqueue(neighbor);
+			}
+		}
+	}
+
+	return gcnew array<MyPoint^>(0);
+}
+
+void Transport::choose_new_destination_point()
 {
 	departure_point = destination_point;
 	destination_point = points_path[index];
@@ -45,44 +88,44 @@ void Transport::choose_new_point()
 
 void Transport::print_picture()
 {
-	pic_box->Image = Image::FromFile(name + "_" + string(direction) + ".png");
+	pic_box->Image = Image::FromFile(delivery::MyForm::path_to_resource + name + "_" + string(direction) + ".png");
 	pic_box->Location = System::Drawing::Point(x - pic_box->Size.Width/2, y - pic_box->Size.Height/2);
 }
 
-Bicycle::Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent)
+Transport::Transport(int x, int y, MyPoint^ departure_point, MyPoint^ global_destination_point, Control^ parent)
 {
 	this->x = x;
 	this->y = y;
+	this->isMoving = true;
+	this->points_path = create_path(departure_point, global_destination_point);
 	this->departure_point = departure_point;
-	this->destination_point = destination_point;
+	this->destination_point = this->points_path[1];
 	this->pic_box = gcnew System::Windows::Forms::PictureBox();
 	this->pic_box->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
-	this->pic_box->Image = Image::FromFile(delivery::MyForm::path_to_resource + "bicycle_Up.png");
-	this->pic_box->Location = System::Drawing::Point(x - 10, y - 20);
 	this->pic_box->BackColor = System::Drawing::Color::Transparent;
 	this->pic_box->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Zoom;
-	this->pic_box->MaximumSize = System::Drawing::Size(20, 40);
-	this->pic_box->Size = System::Drawing::Size(20, 40);
 	this->pic_box->Show();
 	parent->Controls->Add(pic_box);
 }
 
-Car::Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent)
+Bicycle::Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ global_destination_point, Control^ parent) : Transport(x, y, departure_point, global_destination_point, parent)
 {
-	this->x = x;
-	this->y = y;
-	this->departure_point = departure_point;
-	this->destination_point = destination_point;
-	this->pic_box = gcnew System::Windows::Forms::PictureBox();
-	this->pic_box->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
+	this->pic_box->Image = Image::FromFile(delivery::MyForm::path_to_resource + "bicycle_Up.png");
+	this->pic_box->Location = System::Drawing::Point(x - 10, y - 20);
+	this->pic_box->MaximumSize = System::Drawing::Size(20, 40);
+	this->pic_box->Size = System::Drawing::Size(20, 40);
+	this->name = "bicycle";
+	this->step = 10;
+}
+
+Car::Car(int x, int y, MyPoint^ departure_point, MyPoint^ global_destination_point, Control^ parent) : Transport(x, y, departure_point, global_destination_point, parent)
+{
 	this->pic_box->Image = Image::FromFile(delivery::MyForm::path_to_resource + "car_Up.png");
 	this->pic_box->Location = System::Drawing::Point(x - 20, y - 40);
-	this->pic_box->BackColor = System::Drawing::Color::Transparent;
-	this->pic_box->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Zoom;
 	this->pic_box->MaximumSize = System::Drawing::Size(40, 80);
 	this->pic_box->Size = System::Drawing::Size(40, 80);
-	this->pic_box->Show();
-	parent->Controls->Add(pic_box);
+	this->name = "car";
+	this->step = 20;
 }
 
 void Bicycle::start_event()
