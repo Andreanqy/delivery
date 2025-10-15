@@ -5,8 +5,10 @@
 using namespace System;
 using namespace System::Windows::Forms;
 using namespace System::Collections::Generic;
+using namespace System::Threading::Tasks;
 
 ref class Structure;
+ref class Store;
 
 // —труктура, котора€ описывает точки на карте
 ref class MyPoint
@@ -30,30 +32,34 @@ public:
 	event UnloadEventHandler^ UnloadEvent;
 
 	Transport(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
+	int x, y;
+	int index; // «анул€ть, при создании нового points_path
+	bool isMoving;
+	MyPoint^ departure_point;
+	MyPoint^ destination_point;
+	array<MyPoint^>^ points_path;
+	System::Windows::Forms::PictureBox^ pic_box;
 	void move();
 	virtual void start_event() = 0;
 	array<MyPoint^>^ create_path(MyPoint^ departure_point, MyPoint^ global_destination_point);
+	Store^ get_random_store();
+	void play_loader_animation(Structure^ source, Transport^ target, int size);
 private:
-	int index; // «анул€ть, при создании нового points_path
-	bool isMoving;
 	Direction direction;
-	array<MyPoint^>^ points_path;
 	void print_picture();
 	void choose_new_destination_point();
 protected:
-	int x, y;
 	int step;
 	String^ name;
-	MyPoint^ departure_point;
-	MyPoint^ destination_point;
 	System::Windows::Forms::Control^ par;
-	System::Windows::Forms::PictureBox^ pic_box;
 };
 
 //  ласс, который описывает велосипедистов, доставл€ющих товары
 ref class Bicycle : Transport
 {
 public:
+	int current_load;
+	array<Tuple<MyPoint^, int>^>^ delivery_plan;
 	Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 	void start_event() override;
 };
@@ -97,6 +103,7 @@ public:
 private:
 	void load(Transport^ sender, Structure^ target);
 	void unload(Transport^ sender, Structure^ target);
+	array<Tuple<MyPoint^, int>^>^ create_delivery_plan();
 };
 
 //  ласс, который описывает работу дома-получател€

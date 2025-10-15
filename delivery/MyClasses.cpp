@@ -74,6 +74,25 @@ array<MyPoint^>^ Transport::create_path(MyPoint^ departure_point, MyPoint^ globa
 	return gcnew array<MyPoint^>(0);
 }
 
+Store^ Transport::get_random_store()
+{
+	// Собираем все структуры типа Store
+	List<Store^>^ stores = gcnew List<Store^>();
+	for each (Structure ^ s in delivery::MyForm::structures)
+	{
+		if (Store^ st = dynamic_cast<Store^>(s))
+			stores->Add(st);
+	}
+
+	Random^ rnd = gcnew Random();
+	return stores[rnd->Next(stores->Count)];
+}
+
+void Transport::play_loader_animation(Structure^ source, Transport^ target, int size)
+{
+	delivery::MyForm::active_animations->Add(gcnew delivery::LoaderAnimation(source, target, size));
+}
+
 void Transport::choose_new_destination_point()
 {
 	departure_point = destination_point;
@@ -181,12 +200,75 @@ void Store::subscribe_if_relevant(Transport^ t)
 
 void Store::load(Transport^ sender, Structure^ target)
 {
-	if (target == this) { /*Загрузка велосипедиста*/ }
+	if (target != this) return;
+
+	sender->isMoving = false; // остановка транспорта
+
+	// Запускаем анимацию грузчика
+	sender->play_loader_animation(this, sender, 20);
+
+	// Если это велосипед — формируем список доставок
+	if (Bicycle^ bicycle = dynamic_cast<Bicycle^>(sender))
+	{
+		// Формируем заказы (каждый — пара <точка_дома, объём>)
+		auto plan = create_delivery_plan();
+		bicycle->delivery_plan = plan;
+
+		// Подсчёт общего объёма груза
+		int total = 0;
+		for each (auto t in plan)
+			total += t->Item2;
+		bicycle->current_load = total;
+
+		// Если есть куда ехать — строим путь к первому дому
+		if (plan->Length > 0)
+		{
+			bicycle->index = 0;
+			bicycle->points_path = bicycle->create_path(
+				bicycle->departure_point,
+				plan[0]->Item1
+			);
+
+			if (bicycle->points_path->Length > 1)
+				bicycle->destination_point = bicycle->points_path[1];
+		}
+	}
+
+	// После короткой паузы — включаем движение
+	//System::Threading::Tasks::Task::Delay(1000).ContinueWith(gcnew System::Action( [sender]() { sender->isMoving = true; }));
 }
+
 
 void Store::unload(Transport^ sender, Structure^ target)
 {
 	if (target == this) { /*Разгрузка машины*/ }
+}
+
+array<Tuple<MyPoint^, int>^>^ Store::create_delivery_plan()
+{
+	Random^ rnd = gcnew Random();
+	List<MyPoint^>^ all_houses = gcnew List<MyPoint^>();
+
+	for each (MyPoint ^ p in delivery::MyForm::points_bicycle)
+	{
+		if (p->structure != nullptr && dynamic_cast<House^>(p->structure))
+			all_houses->Add(p);
+	}
+
+	List<Tuple<MyPoint^, int>^>^ deliveries = gcnew List<Tuple<MyPoint^, int>^>();
+	int remaining_capacity = 5;
+
+	while (remaining_capacity > 0 && all_houses->Count > 0)
+	{
+		int idx = rnd->Next(all_houses->Count);
+		MyPoint^ house_point = all_houses[idx];
+		all_houses->RemoveAt(idx);
+		int volume = rnd->Next(1, Math::Min(3, remaining_capacity) + 1);
+		deliveries->Add(gcnew Tuple<MyPoint^, int>(house_point, volume));
+		remaining_capacity -= volume;
+	}
+
+	return deliveries->ToArray();
 }
 
 House::House(int num_point_bicycle) : Structure(delivery::MyForm::points_bicycle[num_point_bicycle])
@@ -202,5 +284,49 @@ void House::subscribe_if_relevant(Transport^ t)
 
 void House::unload(Transport^ sender, Structure^ target)
 {
-	if (target == this) { /*Разгрузка велосипедиста*/ }
+	if (target != this) return;
+
+	sender->isMoving = false;
+
+	// Анимация разгрузки
+	sender->play_loader_animation(this, sender, 20);
+
+	if (Bicycle^ bicycle = dynamic_cast<Bicycle^>(sender))
+	{
+		int volume = bicycle->delivery_plan[bicycle->index]->Item2;
+		bicycle->current_load -= volume;
+
+		// Если остались дома — едем к следующему
+		bicycle->index++;
+
+		if (bicycle->index < bicycle->delivery_plan->Length)
+		{
+			MyPoint^ next = bicycle->delivery_plan[bicycle->index]->Item1;
+			bicycle->points_path = bicycle->create_path(
+				bicycle->destination_point,
+				next
+			);
+
+			if (bicycle->points_path->Length > 1)
+				bicycle->destination_point = bicycle->points_path[1];
+		}
+		else
+		{
+			// Когда всё развёз — возвращается в ближайший магазин
+			Store^ nearest = bicycle->get_random_store(); //get_nearest_store(bicycle->destination_point);
+			if (nearest != nullptr)
+			{
+				bicycle->points_path = bicycle->create_path(
+					bicycle->destination_point,
+					nearest->bicycle_point
+				);
+
+				if (bicycle->points_path->Length > 1)
+					bicycle->destination_point = bicycle->points_path[1];
+			}
+		}
+	}
+
+	// Возобновляем движение через секунду
+	//System::Threading::Tasks::Task::Delay(1000).ContinueWith(gcnew System::Action( [sender]() { sender->isMoving = true; }));
 }
