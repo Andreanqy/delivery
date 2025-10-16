@@ -34,7 +34,7 @@ namespace delivery
 		}
 
 	public:
-		unsigned int global_time = 0;
+		static bool daytime; // false=ночь, true=день
 
 		static array<MyPoint^>^ points_car = gcnew array<MyPoint^>(0);
 		static array<MyPoint^>^ points_bicycle = gcnew array<MyPoint^>(0);
@@ -48,7 +48,9 @@ namespace delivery
 
 	private:
 		System::Windows::Forms::Timer^ general_timer;
-		System::ComponentModel::IContainer^ components;
+	private: System::Windows::Forms::Timer^ day_night_timer;
+
+		   System::ComponentModel::IContainer^ components;
 
 #pragma region Windows Form Designer generated code
 		void InitializeComponent(void)
@@ -56,12 +58,18 @@ namespace delivery
 			this->components = (gcnew System::ComponentModel::Container());
 			System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(MyForm::typeid));
 			this->general_timer = (gcnew System::Windows::Forms::Timer(this->components));
+			this->day_night_timer = (gcnew System::Windows::Forms::Timer(this->components));
 			this->SuspendLayout();
 			// 
 			// general_timer
 			// 
 			this->general_timer->Enabled = true;
 			this->general_timer->Tick += gcnew System::EventHandler(this, &MyForm::general_timer_Tick);
+			// 
+			// day_night_timer
+			// 
+			this->day_night_timer->Interval = 20000;
+			this->day_night_timer->Tick += gcnew System::EventHandler(this, &MyForm::day_night_timer_Tick);
 			// 
 			// MyForm
 			// 
@@ -75,11 +83,14 @@ namespace delivery
 			this->Text = L"MyForm";
 			this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
 			this->ResumeLayout(false);
+
 		}
 #pragma endregion
 
 	private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e)
 	{
+		daytime = true;
+
 		points_car = file_to_points(path_to_resource + "points_car.txt");
 		file_to_reach_lists(path_to_resource + "reach_lists_car.txt", points_car);
 		points_bicycle = file_to_points(path_to_resource + "points_bicycle.txt");
@@ -94,7 +105,7 @@ namespace delivery
 		House^ h4 = gcnew House(12);
 		House^ h5 = gcnew House(16);
 
-		Car^ car = gcnew Car(130, 440, points_car[7], points_car[2], this);
+		Car^ car = gcnew Car(130, 440, points_car[1], points_car[0], this);
 		Bicycle^ bicycle_1 = gcnew Bicycle(100, 405, points_bicycle[14], points_bicycle[1], this);
 		bicycle_1->name_number = "bicycle №1";
 		Bicycle^ bicycle_2 = gcnew Bicycle(400, 465, points_bicycle[21], points_bicycle[0], this);
@@ -113,12 +124,56 @@ namespace delivery
 
 	private: System::Void general_timer_Tick(System::Object^ sender, System::EventArgs^ e)
 	{
+		/*
+		if (global_time == 300)
+		{
+			for each (Transport ^ t in transports)
+			{
+				if (Car^ c = dynamic_cast<Car^>(t))
+					c->points_path = create_path(c, c->departure_point, points_car[3]);
+				else if (Bicycle^ b = dynamic_cast<Bicycle^>(b))
+					b->points_path = create_path(b, b->departure_point, points_bicycle[23]);
+			}
+		}
+		*/
+
 		for each (Transport ^ t in transports)
 			t->move();
+
+
 
 		for (int i = 0; i < active_animations->Count; i++)
 			if (active_animations[i]->update())
 				active_animations->RemoveAt(i);
 	}
-	};
+	private: System::Void day_night_timer_Tick(System::Object^ sender, System::EventArgs^ e)
+	{
+		/*
+		daytime = !daytime;
+
+		String^ timeName;
+		switch (daytime)
+		{
+		case true: timeName = "День"; break;
+		case false: timeName = "Ночь"; break;
+		}
+
+		//Console::WriteLine("Наступило: " + timeName);
+
+		for each (Transport ^ t in transports)
+		{
+			if (!daytime) // ночь
+			{
+				// Отправляем за пределы карты
+				t->go_to_sleep_point();
+			}
+			else if (daytime) // утро
+			{
+				// Возвращаем обратно
+				t->return_from_sleep_point();
+			}
+		}
+		*/
+	}
+};
 }

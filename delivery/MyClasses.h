@@ -55,9 +55,12 @@ public:
 	int x, y;
 	int index;
 	bool isMoving;
+	bool isLoading;
+	bool isUnloading;
 
 	Direction direction;
 
+	MyPoint^ home_point;
 	MyPoint^ departure_point;
 	MyPoint^ destination_point;
 
@@ -101,6 +104,8 @@ public:
 ref class Car : Transport
 {
 public:
+	PictureBox^ download_pic;
+
 	void start_event() override;
 
 	Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
