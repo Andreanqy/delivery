@@ -41,16 +41,17 @@ public:
 	System::Windows::Forms::PictureBox^ pic_box;
 	void move();
 	virtual void start_event() = 0;
-	array<MyPoint^>^ create_path(MyPoint^ departure_point, MyPoint^ global_destination_point);
-	Store^ get_random_store();
-	void play_loader_animation(Structure^ source, Transport^ target, int size);
-private:
 	Direction direction;
+	//array<MyPoint^>^ create_path(MyPoint^ departure_point, MyPoint^ global_destination_point);
+	Store^ get_random_store();
+	void play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps);
+	void log(System::String^ label);
+private:
 	void print_picture();
 	void choose_new_destination_point();
 protected:
 	int step;
-	String^ name;
+	System::String^ name;
 	System::Windows::Forms::Control^ par;
 };
 
@@ -59,7 +60,9 @@ ref class Bicycle : Transport
 {
 public:
 	int current_load;
-	array<Tuple<MyPoint^, int>^>^ delivery_plan;
+	array<System::Tuple<MyPoint^, int>^>^ delivery_plan;
+	int cargo_index;
+	System::String^ name_number;
 	Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 	void start_event() override;
 };
@@ -76,7 +79,7 @@ public:
 ref class Structure abstract
 {
 public:
-	const MyPoint^ point;
+	MyPoint^ point;
 	Structure(MyPoint^ point);
 	Structure();
 	virtual void subscribe_if_relevant(Transport^ t) = 0;
@@ -103,7 +106,7 @@ public:
 private:
 	void load(Transport^ sender, Structure^ target);
 	void unload(Transport^ sender, Structure^ target);
-	array<Tuple<MyPoint^, int>^>^ create_delivery_plan();
+	array<System::Tuple<MyPoint^, int>^>^ create_delivery_plan();
 };
 
 //  ласс, который описывает работу дома-получател€

@@ -5,7 +5,7 @@ using namespace System::Windows::Forms;
 using namespace delivery;
 
 [STAThread]
-int Main(array<String^>^ args)
+int Main(array<System::String^>^ args)
 {
     Application::EnableVisualStyles();
     Application::SetCompatibleTextRenderingDefault(false);

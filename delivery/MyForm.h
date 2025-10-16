@@ -2,9 +2,10 @@
 
 #include "Source.h"
 #include "MyClasses.h"
+#include <cstdlib>
 
-array<MyPoint^>^ file_to_points(String^);
-void file_to_reach_lists(String^, array<MyPoint^>^);
+array<MyPoint^>^ file_to_points(System::String^);
+void file_to_reach_lists(System::String^, array<MyPoint^>^);
 
 namespace delivery
 {
@@ -25,53 +26,83 @@ namespace delivery
 	public:
 		PictureBox^ loader;
 		int x1, x2, y;
+		int step;
 		int steps;
 		int current;
-		bool forward;
-		double dx, dy;
+		int total_steps;
+		int goal_steps;
+		System::String^ direction;
+		Transport^ transport;
 
-		LoaderAnimation(Structure^ source, Transport^ target, int size)
+		LoaderAnimation(Structure^ source, Transport^ target, int size, int goal_steps)
 		{
-			if (Store^ st = dynamic_cast<Store^>(source))
+			if (Bicycle^ b = dynamic_cast<Bicycle^>(target))
 			{
-				x1 = st->bicycle_point->x;
-				x2 = target->x;
-				y = st->bicycle_point->y;
+				if (Store^ s = dynamic_cast<Store^>(source))
+				{
+					switch (s->bicycle_point->number)
+					{
+					case 0: x1 = s->bicycle_point->x + 40; x2 = target->x; break;
+					case 1: x1 = s->bicycle_point->x - 60; x2 = target->x - 15; break;
+					}
+				}
+				else if (House^ h = dynamic_cast<House^>(source))
+				{
+					switch (h->point->number)
+					{
+					case 2:
+					case 11:
+					case 13: x1 = h->point->x - 60; x2 = target->x - 15; break;
+					case 12:
+					case 16: x1 = h->point->x + 60; x2 = target->x + 15; break;
+					}
+				}
 			}
-			else
+			else if (Car^ c = dynamic_cast<Car^>(target))
 			{
-				x1 = source->point->x;
-				x2 = target->x;
-				y = source->point->y;
+				if (Store^ s = dynamic_cast<Store^>(target))
+				{
+					switch (s->car_point->number)
+					{
+					case 0: x1 = s->car_point->x + 60; x2 = target->x + 15; break;
+					case 1: x1 = s->car_point->x - 60; x2 = target->x - 15; break;
+					}
+				}
+				if (Warehouse^ wh = dynamic_cast<Warehouse^>(source))
+				{
+					x1 = wh->point->x - 90;
+				}
 			}
 
-			steps = 40;
+			y = target->y;
+			step = 5;
+			steps = abs(x2 - x1) / step;
 			current = 0;
-			forward = true;
-			dx = (x2 - x1) / (double)steps;
+			total_steps = 0;
+			this->goal_steps = goal_steps;
+			transport = target;
 
 			// Определяем направление для картинки
-			System::String^ direction = (x2 - x1 > 0) ? "Right" : "Left";
+			direction = (x2 - x1 > 0) ? "Right" : "Left";
 
 			// Создаём PictureBox
-			Control^ parent = target->pic_box->Parent;
-			loader = gcnew PictureBox();
-			loader->Image = Image::FromFile(gcnew System::String(path_to_resource) + "loader_Right.png");
-			loader->SizeMode = PictureBoxSizeMode::Zoom;
-			loader->BackColor = Color::Transparent;
+			System::Windows::Forms::Control^ parent = target->pic_box->Parent;
+			loader = gcnew System::Windows::Forms::PictureBox();
+			loader->Image = System::Drawing::Image::FromFile(gcnew System::String(path_to_resource) + "loader_" + direction + ".png");
+			loader->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
+			loader->BackColor = System::Drawing::Color::Transparent;
 			loader->Size = System::Drawing::Size(size, size);
-			loader->Location = Point(x1, y);
+			loader->Location = System::Drawing::Point(x1, y);
 			parent->Controls->Add(loader);
 			loader->BringToFront();
 		}
 
 		// Возвращает true, если анимация завершена
-		bool update()
+		/*bool Update()
 		{
 			if (forward)
 			{
-				loader->Location = Point(x1 + (int)(dx * current), y);
-				current++;
+				loader->Location = Point(x1 + (direction == "Right" ? step : -step), y);
 				if (current >= steps)
 				{
 					forward = false;
@@ -80,7 +111,7 @@ namespace delivery
 			}
 			else
 			{
-				loader->Location = Point(x2 - (int)(dx * current), y);
+				loader->Location = Point(x2 - (direction == "Right" ? step : -step), y);
 				current++;
 				if (current >= steps)
 				{
@@ -90,6 +121,30 @@ namespace delivery
 					return true;
 				}
 			}
+			return false;
+		}*/
+
+		bool update()
+		{
+			loader->Location = System::Drawing::Point(loader->Location.X + (direction == "Right" ? step : -step), y - (loader->Size.Height/2));
+			current++;
+			total_steps++;
+			if (current >= steps)
+			{
+				direction = (direction == "Right") ? "Left" : "Right";
+				loader->Image = System::Drawing::Image::FromFile(gcnew System::String(path_to_resource) + "loader_" + direction + ".png");
+				current = 0;
+			}
+
+			if (total_steps == goal_steps) // например, добавь флаг forward, как в прошлой версии
+			{
+				loader->Parent->Controls->Remove(loader);
+				delete loader;
+				loader = nullptr;
+				transport->isMoving = true;
+				return true; // сигнал — удалить из списка
+			}
+
 			return false;
 		}
 	};
@@ -122,9 +177,9 @@ namespace delivery
 		static array<Structure^>^ structures;
 		static array<Transport^>^ transports;
 
-		static List<LoaderAnimation^>^ active_animations = gcnew List<LoaderAnimation^>();; // отложенная инициализация active_animations = gcnew List<LoaderAnimation^>();
+		static System::Collections::Generic::List<LoaderAnimation^>^ active_animations = gcnew System::Collections::Generic::List<LoaderAnimation^>();; // отложенная инициализация active_animations = gcnew List<LoaderAnimation^>();
 
-		static String^ path_to_resource = gcnew System::String(delivery::path_to_resource);
+		static System::String^ path_to_resource = gcnew System::String(delivery::path_to_resource);
 
 	private:
 		System::Windows::Forms::Timer^ general_timer;
@@ -176,10 +231,12 @@ namespace delivery
 
 		Car^ car = gcnew Car(130, 440, points_car[7], points_car[2], this);
 		Bicycle^ bicycle_1 = gcnew Bicycle(100, 405, points_bicycle[14], points_bicycle[1], this);
+		bicycle_1->name_number = "bicycle №1";
 		Bicycle^ bicycle_2 = gcnew Bicycle(400, 465, points_bicycle[21], points_bicycle[0], this);
+		bicycle_2->name_number = "bicycle №2";
 
 		structures = gcnew array<Structure^> { wh, st1, st2, h1, h2, h3, h4, h5 };
-		transports = gcnew array<Transport^> { car, bicycle_1, bicycle_2 };
+		transports = gcnew array<Transport^> { bicycle_1}; // car, bicycle_2 
 
 		for each (Structure ^ s in structures)
 			for each (Transport ^ t in transports)
@@ -192,6 +249,7 @@ namespace delivery
 			t->move();
 
 		for (int i = 0; i < active_animations->Count; i++)
+			//active_animations[i]->update();
 			if (active_animations[i]->update())
 				active_animations->RemoveAt(i); // теперь работает
 	}
