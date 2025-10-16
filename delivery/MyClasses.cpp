@@ -8,6 +8,91 @@ MyPoint::MyPoint(int num, int x, int y, char type) {
 	this->y = y;
 }
 
+LoaderAnimation::LoaderAnimation(Structure^ source, Transport^ target, int size, int goal_steps)
+{
+	if (Bicycle^ b = dynamic_cast<Bicycle^>(target))
+	{
+		if (Store^ s = dynamic_cast<Store^>(source))
+		{
+			switch (s->bicycle_point->number)
+			{
+			case 0: x1 = s->bicycle_point->x + 40; x2 = target->x; break;
+			case 1: x1 = s->bicycle_point->x - 40; x2 = target->x - 15; break;
+			}
+		}
+		else if (House^ h = dynamic_cast<House^>(source))
+		{
+			switch (h->point->number)
+			{
+			case 2:
+			case 11:
+			case 13: x1 = h->point->x - 40; x2 = target->x - 15; break;
+			case 12:
+			case 16: x1 = h->point->x + 40; x2 = target->x - 15; break;
+			}
+		}
+	}
+	else if (Car^ c = dynamic_cast<Car^>(target))
+	{
+		if (Store^ s = dynamic_cast<Store^>(source))
+		{
+			switch (s->car_point->number)
+			{
+			case 1: x1 = s->car_point->x - 60; x2 = target->x - 15; break;
+			case 2: x1 = s->car_point->x + 60; x2 = target->x - 15; break;
+			}
+		}
+		if (Warehouse^ wh = dynamic_cast<Warehouse^>(source))
+		{
+			x1 = wh->point->x - 90;
+			x2 = target->x - 30;
+		}
+	}
+
+	y = target->y;
+	step = 5;
+	steps = abs(x2 - x1) / step;
+	current = 0;
+	total_steps = 0;
+	this->goal_steps = goal_steps;
+	transport = target;
+	direction = (x2 - x1 > 0) ? "Right" : "Left";
+
+	System::Windows::Forms::Control^ parent = target->pic_box->Parent;
+	loader = gcnew System::Windows::Forms::PictureBox();
+	loader->Image = System::Drawing::Image::FromFile(gcnew System::String(delivery::path_to_resource) + "loader_" + direction + ".png");
+	loader->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
+	loader->BackColor = System::Drawing::Color::Transparent;
+	loader->Size = System::Drawing::Size(size, size);
+	loader->Location = System::Drawing::Point(x1, y);
+	parent->Controls->Add(loader);
+	loader->BringToFront();
+}
+
+bool LoaderAnimation::update()
+{
+	loader->Location = System::Drawing::Point(loader->Location.X + (direction == "Right" ? step : -step), y - (loader->Size.Height / 2));
+	current++;
+	total_steps++;
+	if (current >= steps)
+	{
+		direction = (direction == "Right") ? "Left" : "Right";
+		loader->Image = System::Drawing::Image::FromFile(gcnew System::String(delivery::path_to_resource) + "loader_" + direction + ".png");
+		current = 0;
+	}
+
+	if (total_steps == goal_steps)
+	{
+		loader->Parent->Controls->Remove(loader);
+		delete loader;
+		loader = nullptr;
+		transport->isMoving = true;
+		return true;
+	}
+
+	return false;
+}
+
 void Transport::move()
 {
 	if (!isMoving || destination_point == nullptr) return;
@@ -51,7 +136,6 @@ void Transport::move()
 
 Store^ Transport::get_random_store()
 {
-	// Собираем все структуры типа Store
 	System::Collections::Generic::List<Store^>^ stores = gcnew System::Collections::Generic::List<Store^>();
 	for each (Structure ^ s in delivery::MyForm::structures)
 	{
@@ -65,7 +149,7 @@ Store^ Transport::get_random_store()
 
 void Transport::play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps)
 {
-	delivery::MyForm::active_animations->Add(gcnew delivery::LoaderAnimation(source, target, size, goal_steps));
+	delivery::MyForm::active_animations->Add(gcnew LoaderAnimation(source, target, size, goal_steps));
 }
 
 void Transport::choose_new_destination_point()
@@ -165,7 +249,6 @@ void Warehouse::load(Transport^ sender, Structure^ target)
 
 	sender->departure_point = this->point;
 	sender->points_path = create_path(sender, sender->departure_point, sender->get_random_store()->car_point);
-	//sender->direction = (sender->points_path[0]->x > sender->points_path[1]->x) ? Down : Up;
 	sender->destination_point = sender->points_path[1];
 }
 
@@ -181,6 +264,7 @@ void Store::subscribe_if_relevant(Transport^ t)
 {
 	if (Bicycle^ bicycle = dynamic_cast<Bicycle^>(t))
 		bicycle->LoadEvent += gcnew Transport::LoadEventHandler(this, &Store::load);
+
 	if (Car^ car = dynamic_cast<Car^>(t))
 		car->UnloadEvent += gcnew Transport::UnloadEventHandler(this, &Store::unload);
 }
@@ -189,15 +273,12 @@ void Store::load(Transport^ sender, Structure^ target)
 {
 	if (target != this) return;
 
-	sender->isMoving = false; // остановка транспорта
+	sender->isMoving = false;
 
-	// Запускаем анимацию грузчика
 	sender->play_loader_animation(this, sender, 20, 40);
 
-	// Если это велосипед — формируем список доставок
 	if (Bicycle^ bicycle = dynamic_cast<Bicycle^>(sender))
 	{
-
 		System::Random^ rnd = gcnew System::Random();
 		System::Collections::Generic::List<MyPoint^>^ all_houses = gcnew System::Collections::Generic::List<MyPoint^>();
 
@@ -212,38 +293,9 @@ void Store::load(Transport^ sender, Structure^ target)
 
 		sender->departure_point = this->bicycle_point;
 		sender->points_path = create_path(sender, sender->departure_point, house_point);
-		//sender->direction = (sender->points_path[0]->x > sender->points_path[1]->x) ? Down : Up;
 		sender->destination_point = sender->points_path[1];
-		/*
-		// Формируем заказы (каждый — пара <точка_дома, объём>)
-		auto plan = create_delivery_plan();
-		bicycle->delivery_plan = plan;
-
-		// Подсчёт общего объёма груза
-		int total = 0;
-		for each (auto t in plan)
-			total += t->Item2;
-		bicycle->current_load = total;
-
-		bicycle->cargo_index = 0;
-		bicycle->points_path = bicycle->create_path(
-			bicycle->departure_point,
-			plan[0]->Item1
-		);
-
-		if (bicycle->points_path->Length > 1)
-			bicycle->destination_point = bicycle->points_path[1];
-		*/
-
 	}
-
-	// После короткой паузы — включаем движение
-	//System::Threading::Tasks::Task::Delay(1000).ContinueWith(gcnew System::Action( [sender]() { sender->isMoving = true; }));
-	//System::Threading::Thread::Sleep(1000);
-	//sender->isMoving = true;
-
 }
-
 
 void Store::unload(Transport^ sender, Structure^ target)
 {
@@ -251,7 +303,6 @@ void Store::unload(Transport^ sender, Structure^ target)
 
 	sender->isMoving = false;
 
-	// Анимация разгрузки
 	sender->play_loader_animation(this, sender, 30, 80);
 
 	sender->departure_point = this->car_point;
@@ -303,54 +354,12 @@ void House::unload(Transport^ sender, Structure^ target)
 
 	sender->isMoving = false;
 
-	// Анимация разгрузки
 	sender->play_loader_animation(this, sender, 20, 40);
 
 	Store^ random_store = sender->get_random_store();
 	sender->departure_point = this->point;
 	sender->points_path = create_path(sender, sender->departure_point, random_store->bicycle_point);
 	sender->destination_point = sender->points_path[1];
-
-	/*
-	if (Bicycle^ bicycle = dynamic_cast<Bicycle^>(sender))
-	{
-		int volume = bicycle->delivery_plan[bicycle->cargo_index]->Item2;
-		bicycle->current_load -= volume;
-
-		// Если остались дома — едем к следующему
-		bicycle->cargo_index++;
-
-		if (bicycle->cargo_index < bicycle->delivery_plan->Length)
-		{
-			MyPoint^ next = bicycle->delivery_plan[bicycle->cargo_index]->Item1;
-			bicycle->points_path = create_path(
-				bicycle->destination_point,
-				next
-			);
-
-			if (bicycle->points_path->Length > 1)
-				bicycle->destination_point = bicycle->points_path[1];
-		}
-		else
-		{
-			// Когда всё развёз — возвращается в ближайший магазин
-			Store^ random = bicycle->get_random_store(); //get_random_store(bicycle->destination_point);
-			if (random != nullptr)
-			{
-				bicycle->points_path = create_path(
-					bicycle->destination_point,
-					random->bicycle_point
-				);
-
-				if (bicycle->points_path->Length > 1)
-					bicycle->destination_point = bicycle->points_path[1];
-			}
-		}
-	}
-	*/
-
-	// Возобновляем движение через секунду
-	//System::Threading::Tasks::Task::Delay(1000).ContinueWith(gcnew System::Action( [sender]() { sender->isMoving = true; }));
 }
 
 void Transport::log(System::String^ label)
@@ -373,3 +382,4 @@ void Transport::log(System::String^ label)
 		System::Diagnostics::Debug::WriteLine(msg);
 	}
 }
+

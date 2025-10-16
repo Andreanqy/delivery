@@ -27,7 +27,6 @@ template<typename Mas, typename El> Mas mas_add(Mas old_mas, int& mas_size, El n
 
 // Функция, которая создает из строки точку
 MyPoint^ str_to_point(System::String^ str) {
-	//double k = 0.87;
 	str += " ";
 	int number = -1, x = -1, y = -1, type = -1;
 	int count = 0;
@@ -69,7 +68,7 @@ array<MyPoint^>^ file_to_points(System::String^ file_path) {
 // Функция, которая создает из строки список достижимости
 array<int>^ str_to_reach_list(System::String^ str, array<MyPoint^>^ points) {
 	str += " ";
-	array<int>^ reach_list; // Первый элемент - номер точки, остальные элементы - точки достижимости
+	array<int>^ reach_list;
 	int reach_list_size = 0;
 	System::String^ temp_str = "";
 	for (int i = 0; i < str->Length; i++) {
@@ -107,7 +106,6 @@ void file_to_reach_lists(System::String^ file_path, array<MyPoint^>^ points) {
 					}
 					else if (count > 0 && temp_str != "") {
 						reach_list = mas_add(reach_list, reach_list_size, points[Convert::ToInt32(temp_str)]);
-						//count++;
 					}
 					temp_str = "";
 				}
@@ -118,6 +116,7 @@ void file_to_reach_lists(System::String^ file_path, array<MyPoint^>^ points) {
 	sr->Close();
 }
 
+// Функция, которая создает путь до точки
 array<MyPoint^>^ create_path(Transport^ t, MyPoint^ departure_point, MyPoint^ global_destination_point)
 {
 	System::Collections::Generic::Queue<MyPoint^>^ queue = gcnew System::Collections::Generic::Queue<MyPoint^>();
@@ -156,8 +155,5 @@ array<MyPoint^>^ create_path(Transport^ t, MyPoint^ departure_point, MyPoint^ gl
 		}
 	}
 
-	//t->index = 0;
-
 	return gcnew array<MyPoint^>(0);
 }
-

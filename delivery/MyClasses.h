@@ -21,6 +21,27 @@ public:
 	MyPoint(int num, int x, int y, char type);
 };
 
+//  ласс, который отвечает за отрисовку анимации загрузки/разгрузки
+ref class LoaderAnimation
+{
+public:
+	int x1;
+	int x2;
+	int y;
+	int step;
+	int steps;
+	int current;
+	int total_steps;
+	int goal_steps;
+	PictureBox^ loader;
+	Transport^ transport;
+	System::String^ direction;
+
+	bool update();
+
+	LoaderAnimation(Structure^ source, Transport^ target, int size, int goal_steps);
+};
+
 //  ласс, которые описывает транспортные средства
 ref class Transport abstract
 {
@@ -31,24 +52,31 @@ public:
 	delegate void UnloadEventHandler(Transport^ sender, Structure^ target);
 	event UnloadEventHandler^ UnloadEvent;
 
-	Transport(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 	int x, y;
-	int index; // «анул€ть, при создании нового points_path
+	int index;
 	bool isMoving;
+
+	Direction direction;
+
 	MyPoint^ departure_point;
 	MyPoint^ destination_point;
+
 	array<MyPoint^>^ points_path;
+
 	System::Windows::Forms::PictureBox^ pic_box;
+
 	void move();
-	virtual void start_event() = 0;
-	Direction direction;
-	//array<MyPoint^>^ create_path(MyPoint^ departure_point, MyPoint^ global_destination_point);
 	Store^ get_random_store();
-	void play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps);
+	virtual void start_event() = 0;
 	void log(System::String^ label);
+	void play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps);
+
+	Transport(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
+
 private:
-	void print_picture(Direction prev_direction);
 	void choose_new_destination_point();
+	void print_picture(Direction prev_direction);
+
 protected:
 	int step;
 	System::String^ name;
@@ -59,20 +87,23 @@ protected:
 ref class Bicycle : Transport
 {
 public:
-	int current_load;
-	array<System::Tuple<MyPoint^, int>^>^ delivery_plan;
 	int cargo_index;
+	int current_load;
 	System::String^ name_number;
-	Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
+	array<System::Tuple<MyPoint^, int>^>^ delivery_plan;
+
 	void start_event() override;
+
+	Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 };
 
 //  ласс, который описывает машины, доставл€ющие товары
 ref class Car : Transport
 {
 public:
-	Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 	void start_event() override;
+
+	Car(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 };
 
 //  ласс, который описывает здани€
@@ -80,17 +111,21 @@ ref class Structure abstract
 {
 public:
 	MyPoint^ point;
-	Structure(MyPoint^ point);
-	Structure();
+
 	virtual void subscribe_if_relevant(Transport^ t) = 0;
+
+	Structure();
+	Structure(MyPoint^ point);
 };
 
 //  ласс, который описывает работу склада
 ref class Warehouse : Structure
 {
 public:
-	Warehouse(int number_point_car);
 	void subscribe_if_relevant(Transport^ t) override;
+
+	Warehouse(int number_point_car);
+
 private:
 	void load(Transport^ sender, Structure^ target);
 };
@@ -99,10 +134,13 @@ private:
 ref class Store : Structure
 {
 public:
-	MyPoint^ bicycle_point;
 	MyPoint^ car_point;
-	Store(int num_point_bicycle, int num_point_car);
+	MyPoint^ bicycle_point;
+
 	void subscribe_if_relevant(Transport^ t) override;
+
+	Store(int num_point_bicycle, int num_point_car);
+
 private:
 	void load(Transport^ sender, Structure^ target);
 	void unload(Transport^ sender, Structure^ target);
@@ -113,8 +151,10 @@ private:
 ref class House : Structure
 {
 public:
-	House(int num_point_bicycle);
 	void subscribe_if_relevant(Transport^ t) override;
+
+	House(int num_point_bicycle);
+
 private:
 	void unload(Transport^ sender, Structure^ target);
 };
