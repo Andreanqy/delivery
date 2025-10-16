@@ -43,7 +43,7 @@ namespace delivery
 					switch (s->bicycle_point->number)
 					{
 					case 0: x1 = s->bicycle_point->x + 40; x2 = target->x; break;
-					case 1: x1 = s->bicycle_point->x - 60; x2 = target->x - 15; break;
+					case 1: x1 = s->bicycle_point->x - 40; x2 = target->x - 15; break;
 					}
 				}
 				else if (House^ h = dynamic_cast<House^>(source))
@@ -52,25 +52,26 @@ namespace delivery
 					{
 					case 2:
 					case 11:
-					case 13: x1 = h->point->x - 60; x2 = target->x - 15; break;
+					case 13: x1 = h->point->x - 40; x2 = target->x - 15; break;
 					case 12:
-					case 16: x1 = h->point->x + 60; x2 = target->x + 15; break;
+					case 16: x1 = h->point->x + 40; x2 = target->x - 15; break;
 					}
 				}
 			}
 			else if (Car^ c = dynamic_cast<Car^>(target))
 			{
-				if (Store^ s = dynamic_cast<Store^>(target))
+				if (Store^ s = dynamic_cast<Store^>(source))
 				{
 					switch (s->car_point->number)
 					{
-					case 0: x1 = s->car_point->x + 60; x2 = target->x + 15; break;
 					case 1: x1 = s->car_point->x - 60; x2 = target->x - 15; break;
+					case 2: x1 = s->car_point->x + 60; x2 = target->x - 15; break;
 					}
 				}
 				if (Warehouse^ wh = dynamic_cast<Warehouse^>(source))
 				{
 					x1 = wh->point->x - 90;
+					x2 = target->x - 30;
 				}
 			}
 
@@ -239,7 +240,7 @@ namespace delivery
 		bicycle_2->pic_box->BringToFront();
 
 		structures = gcnew array<Structure^> { wh, st1, st2, h1, h2, h3, h4, h5 };
-		transports = gcnew array<Transport^> { bicycle_1, bicycle_2 }; // car, 
+		transports = gcnew array<Transport^> { car, bicycle_1, bicycle_2 };
 
 		for each (Structure ^ s in structures)
 			for each (Transport ^ t in transports)

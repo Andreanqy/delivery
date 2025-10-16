@@ -45,11 +45,6 @@ void Transport::move()
 			start_event();
 		}
 		choose_new_destination_point();
-		/*
-		isMoving = points_path->Length != ++index;
-		if (isMoving) choose_new_destination_point();
-		else start_event();
-		*/
 	}
 	print_picture(prev_direction);
 }
@@ -127,7 +122,7 @@ Car::Car(int x, int y, MyPoint^ departure_point, MyPoint^ global_destination_poi
 	this->pic_box->MaximumSize = System::Drawing::Size(40, 80);
 	this->pic_box->Size = System::Drawing::Size(40, 80);
 	this->name = "car";
-	this->step = 20;
+	this->step = 10;
 }
 
 void Bicycle::start_event()
@@ -139,7 +134,7 @@ void Bicycle::start_event()
 void Car::start_event()
 {
 	if (Warehouse^ wh = dynamic_cast<Warehouse^>(destination_point->structure)) LoadEvent(this, destination_point->structure);
-	else if (Store^ st = dynamic_cast<Store^>(destination_point)) UnloadEvent(this, destination_point->structure);
+	else if (Store^ st = dynamic_cast<Store^>(destination_point->structure)) UnloadEvent(this, destination_point->structure);
 }
 
 Structure::Structure(MyPoint^ point)
@@ -162,7 +157,16 @@ void Warehouse::subscribe_if_relevant(Transport^ t)
 
 void Warehouse::load(Transport^ sender, Structure^ target)
 {
-	if (target == this) { /*Загрузка машины*/ }
+	if (target != this) return;
+
+	sender->isMoving = false;
+
+	sender->play_loader_animation(this, sender, 30, 80);
+
+	sender->departure_point = this->point;
+	sender->points_path = create_path(sender, sender->departure_point, sender->get_random_store()->car_point);
+	//sender->direction = (sender->points_path[0]->x > sender->points_path[1]->x) ? Down : Up;
+	sender->destination_point = sender->points_path[1];
 }
 
 Store::Store(int num_point_bicycle, int num_point_car)
@@ -208,9 +212,8 @@ void Store::load(Transport^ sender, Structure^ target)
 
 		sender->departure_point = this->bicycle_point;
 		sender->points_path = create_path(sender, sender->departure_point, house_point);
-		sender->direction = (sender->points_path[0]->x > sender->points_path[1]->x) ? Down : Up;
+		//sender->direction = (sender->points_path[0]->x > sender->points_path[1]->x) ? Down : Up;
 		sender->destination_point = sender->points_path[1];
-		int a = 0;
 		/*
 		// Формируем заказы (каждый — пара <точка_дома, объём>)
 		auto plan = create_delivery_plan();
@@ -244,7 +247,16 @@ void Store::load(Transport^ sender, Structure^ target)
 
 void Store::unload(Transport^ sender, Structure^ target)
 {
-	if (target == this) { /*Разгрузка машины*/ }
+	if (target != this) return;
+
+	sender->isMoving = false;
+
+	// Анимация разгрузки
+	sender->play_loader_animation(this, sender, 30, 80);
+
+	sender->departure_point = this->car_point;
+	sender->points_path = create_path(sender, sender->departure_point, delivery::MyForm::points_car[0]);
+	sender->destination_point = sender->points_path[1];
 }
 
 array<System::Tuple<MyPoint^, int>^>^ Store::create_delivery_plan()
@@ -343,18 +355,21 @@ void House::unload(Transport^ sender, Structure^ target)
 
 void Transport::log(System::String^ label)
 {
-	System::String^ msg =
-		"[" + label + "] " + " Departure=" + departure_point->number.ToString() +
-		",\tdestination=" + destination_point->number.ToString() +
-		",\tcurrent position=(" + x + "," + y + ")" +
-		//"), departure=(" + (departure_point != nullptr ? departure_point->x.ToString() : "-1") +
-		//"," + (departure_point != nullptr ? departure_point->y.ToString() : "-1") + ")" +
-		//", destination=(" + (destination_point != nullptr ? destination_point->x.ToString() : "-1") +
-		//"," + (destination_point != nullptr ? destination_point->y.ToString() : "-1") + ")" +
-		//", index=" + index +
-		//", len=" + (points_path != nullptr ? points_path->Length.ToString() : "-1") +
-		//", isMoving=" + (isMoving ? "true" : "false") +
-		",\tdirection=" + string(direction);
+	if (Car^ c = dynamic_cast<Car^>(this))
+	{
+		System::String^ msg =
+			"[" + label + "] " + " Departure=" + departure_point->number.ToString() +
+			",\tdestination=" + destination_point->number.ToString() +
+			",\tcurrent position=(" + x + "," + y + ")" +
+			//"), departure=(" + (departure_point != nullptr ? departure_point->x.ToString() : "-1") +
+			//"," + (departure_point != nullptr ? departure_point->y.ToString() : "-1") + ")" +
+			//", destination=(" + (destination_point != nullptr ? destination_point->x.ToString() : "-1") +
+			//"," + (destination_point != nullptr ? destination_point->y.ToString() : "-1") + ")" +
+			//", index=" + index +
+			//", len=" + (points_path != nullptr ? points_path->Length.ToString() : "-1") +
+			//", isMoving=" + (isMoving ? "true" : "false") +
+			",\tdirection=" + string(direction);
 
-	System::Diagnostics::Debug::WriteLine(msg);
+		System::Diagnostics::Debug::WriteLine(msg);
+	}
 }
