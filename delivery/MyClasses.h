@@ -52,6 +52,31 @@ public:
 	delegate void UnloadEventHandler(Transport^ sender, Structure^ target);
 	event UnloadEventHandler^ UnloadEvent;
 
+	property int p_x {
+		int get() { return x; }
+		void set(int value) { x = value; }
+	}
+	property int p_y {
+		int get() { return y; }
+		void set(int value) { y = value; }
+	}
+	property int p_index{
+		int get() { return index; }
+		void set(int value) { index = value; }
+	}
+	property bool p_isMoving {
+		bool get() { return isMoving; }
+		void set(bool value) { isMoving = value; }
+	}
+	property bool p_isLoading{
+		bool get() { return isLoading; }
+		void set(bool value) { isLoading= value; }
+	}
+	property bool p_isUnloading{
+		bool get() { return isUnloading; }
+		void set(bool value) { isUnloading= value; }
+	}
+
 	int x, y;
 	int index;
 	bool isMoving;
