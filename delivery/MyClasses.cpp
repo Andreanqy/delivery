@@ -12,6 +12,8 @@ void Transport::move()
 {
 	if (!isMoving || destination_point == nullptr) return;
 
+	Direction prev_direction = direction;
+
 	log("Before move");
 
 	switch (direction)
@@ -33,7 +35,6 @@ void Transport::move()
 		if (index < points_path->Length)
 		{
 			isMoving = true;
-			choose_new_destination_point();
 			log("Next point set");
 		}
 		else
@@ -43,13 +44,14 @@ void Transport::move()
 			index = 0;
 			start_event();
 		}
+		choose_new_destination_point();
 		/*
 		isMoving = points_path->Length != ++index;
 		if (isMoving) choose_new_destination_point();
 		else start_event();
 		*/
 	}
-	print_picture();
+	print_picture(prev_direction);
 }
 
 Store^ Transport::get_random_store()
@@ -83,10 +85,12 @@ void Transport::choose_new_destination_point()
 	else if (dif_y < 0) direction = Up;
 }
 
-void Transport::print_picture()
+void Transport::print_picture(Direction prev_direction)
 {
-	pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + name + "_" + string(direction) + ".png");
-	pic_box->Location = System::Drawing::Point(x - pic_box->Size.Width/2, y - pic_box->Size.Height/2);
+	if (prev_direction != direction)
+		pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + name + "_" + string(direction) + ".png");
+
+	pic_box->Location = System::Drawing::Point(x - pic_box->Size.Width / 2, y - pic_box->Size.Height / 2);
 }
 
 Transport::Transport(int x, int y, MyPoint^ departure_point, MyPoint^ global_destination_point, System::Windows::Forms::Control^ parent)
@@ -202,11 +206,10 @@ void Store::load(Transport^ sender, Structure^ target)
 		int idx = rnd->Next(all_houses->Count);
 		MyPoint^ house_point = all_houses[idx];
 
-		sender->departure_point = sender->destination_point;
-		sender->destination_point = house_point;
-
-		sender->points_path = create_path(sender, sender->departure_point, sender->destination_point);
+		sender->departure_point = this->bicycle_point;
+		sender->points_path = create_path(sender, sender->departure_point, house_point);
 		sender->direction = (sender->points_path[0]->x > sender->points_path[1]->x) ? Down : Up;
+		sender->destination_point = sender->points_path[1];
 		int a = 0;
 		/*
 		// ‘ормируем заказы (каждый Ч пара <точка_дома, объЄм>)
@@ -341,15 +344,17 @@ void House::unload(Transport^ sender, Structure^ target)
 void Transport::log(System::String^ label)
 {
 	System::String^ msg =
-		"[" + label + "] x=" + x + ", y=" + y +
-		", dep=(" + (departure_point != nullptr ? departure_point->x.ToString() : "-1") +
-		"," + (departure_point != nullptr ? departure_point->y.ToString() : "-1") + ")" +
-		", dest=(" + (destination_point != nullptr ? destination_point->x.ToString() : "-1") +
-		"," + (destination_point != nullptr ? destination_point->y.ToString() : "-1") + ")" +
-		", index=" + index +
-		", len=" + (points_path != nullptr ? points_path->Length.ToString() : "-1") +
-		", isMoving=" + (isMoving ? "true" : "false") +
-		", dir=" + ((int)direction).ToString();
+		"[" + label + "] " + " Departure=" + departure_point->number.ToString() +
+		",\tdestination=" + destination_point->number.ToString() +
+		",\tcurrent position=(" + x + "," + y + ")" +
+		//"), departure=(" + (departure_point != nullptr ? departure_point->x.ToString() : "-1") +
+		//"," + (departure_point != nullptr ? departure_point->y.ToString() : "-1") + ")" +
+		//", destination=(" + (destination_point != nullptr ? destination_point->x.ToString() : "-1") +
+		//"," + (destination_point != nullptr ? destination_point->y.ToString() : "-1") + ")" +
+		//", index=" + index +
+		//", len=" + (points_path != nullptr ? points_path->Length.ToString() : "-1") +
+		//", isMoving=" + (isMoving ? "true" : "false") +
+		",\tdirection=" + string(direction);
 
 	System::Diagnostics::Debug::WriteLine(msg);
 }

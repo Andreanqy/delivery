@@ -235,8 +235,11 @@ namespace delivery
 		Bicycle^ bicycle_2 = gcnew Bicycle(400, 465, points_bicycle[21], points_bicycle[0], this);
 		bicycle_2->name_number = "bicycle ¹2";
 
+		bicycle_1->pic_box->BringToFront();
+		bicycle_2->pic_box->BringToFront();
+
 		structures = gcnew array<Structure^> { wh, st1, st2, h1, h2, h3, h4, h5 };
-		transports = gcnew array<Transport^> { bicycle_1}; // car, bicycle_2 
+		transports = gcnew array<Transport^> { bicycle_1, bicycle_2 }; // car, 
 
 		for each (Structure ^ s in structures)
 			for each (Transport ^ t in transports)

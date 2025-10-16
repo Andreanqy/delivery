@@ -47,7 +47,7 @@ public:
 	void play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps);
 	void log(System::String^ label);
 private:
-	void print_picture();
+	void print_picture(Direction prev_direction);
 	void choose_new_destination_point();
 protected:
 	int step;
