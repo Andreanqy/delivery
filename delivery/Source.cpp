@@ -117,7 +117,7 @@ void file_to_reach_lists(System::String^ file_path, array<MyPoint^>^ points) {
 }
 
 // Функция, которая создает путь до точки
-array<MyPoint^>^ create_path(Transport^ t, MyPoint^ departure_point, MyPoint^ global_destination_point)
+array<MyPoint^>^ create_path(MyPoint^ departure_point, MyPoint^ global_destination_point)
 {
 	System::Collections::Generic::Queue<MyPoint^>^ queue = gcnew System::Collections::Generic::Queue<MyPoint^>();
 	System::Collections::Generic::Dictionary<int, MyPoint^>^ cameFrom = gcnew System::Collections::Generic::Dictionary<int, MyPoint^>();

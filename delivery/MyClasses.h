@@ -30,16 +30,18 @@ public:
 	int y;
 	int step;
 	int steps;
+	bool isBox;
 	int current;
-	int total_steps;
 	int goal_steps;
+	int total_steps;
 	PictureBox^ loader;
 	Transport^ transport;
-	System::String^ direction;
+	String^ direction;
+	String^ box;
 
 	bool update();
 
-	LoaderAnimation(Structure^ source, Transport^ target, int size, int goal_steps);
+	LoaderAnimation(Structure^ source, Transport^ target, int size, int goal_steps, bool isBox);
 };
 
 //  ласс, которые описывает транспортные средства
@@ -89,6 +91,8 @@ public:
 	MyPoint^ departure_point;
 	MyPoint^ destination_point;
 
+	System::String^ name_number;
+
 	array<MyPoint^>^ points_path;
 
 	System::Windows::Forms::PictureBox^ pic_box;
@@ -97,7 +101,7 @@ public:
 	Store^ get_random_store();
 	virtual void start_event() = 0;
 	void log(System::String^ label);
-	void play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps);
+	void play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps, bool isBox);
 
 	Transport(int x, int y, MyPoint^ departure_point, MyPoint^ destination_point, Control^ parent);
 
@@ -117,7 +121,6 @@ ref class Bicycle : Transport
 public:
 	int cargo_index;
 	int current_load;
-	System::String^ name_number;
 	array<System::Tuple<MyPoint^, int>^>^ delivery_plan;
 
 	void start_event() override;

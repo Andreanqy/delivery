@@ -8,7 +8,7 @@ MyPoint::MyPoint(int num, int x, int y, char type) {
 	this->y = y;
 }
 
-LoaderAnimation::LoaderAnimation(Structure^ source, Transport^ target, int size, int goal_steps)
+LoaderAnimation::LoaderAnimation(Structure^ source, Transport^ target, int size, int goal_steps, bool isBox)
 {
 	if (Bicycle^ b = dynamic_cast<Bicycle^>(target))
 	{
@@ -17,7 +17,7 @@ LoaderAnimation::LoaderAnimation(Structure^ source, Transport^ target, int size,
 			switch (s->bicycle_point->number)
 			{
 			case 0: x1 = s->bicycle_point->x + 40; x2 = target->x; break;
-			case 1: x1 = s->bicycle_point->x - 40; x2 = target->x - 15; break;
+			case 1: x1 = s->bicycle_point->x - 55; x2 = target->x - 15; break;
 			}
 		}
 		else if (House^ h = dynamic_cast<House^>(source))
@@ -26,9 +26,9 @@ LoaderAnimation::LoaderAnimation(Structure^ source, Transport^ target, int size,
 			{
 			case 2:
 			case 11:
-			case 13: x1 = h->point->x - 40; x2 = target->x - 15; break;
+			case 13: x1 = h->point->x - 55; x2 = target->x - 15; break;
 			case 12:
-			case 16: x1 = h->point->x + 40; x2 = target->x - 15; break;
+			case 16: x1 = h->point->x + 40; x2 = target->x; break;
 			}
 		}
 	}
@@ -38,8 +38,8 @@ LoaderAnimation::LoaderAnimation(Structure^ source, Transport^ target, int size,
 		{
 			switch (s->car_point->number)
 			{
-			case 1: x1 = s->car_point->x - 60; x2 = target->x - 15; break;
-			case 2: x1 = s->car_point->x + 60; x2 = target->x - 15; break;
+			case 1: x1 = s->car_point->x - 90; x2 = target->x - 30; break;
+			case 2: x1 = s->car_point->x + 60; x2 = target->x; break;
 			}
 		}
 		else if (Warehouse^ wh = dynamic_cast<Warehouse^>(source))
@@ -58,9 +58,12 @@ LoaderAnimation::LoaderAnimation(Structure^ source, Transport^ target, int size,
 	transport = target;
 	direction = (x2 - x1 > 0) ? "Right" : "Left";
 
+	this->isBox = isBox;
+	this->box = isBox ? "_box" : "";
+
 	System::Windows::Forms::Control^ parent = target->pic_box->Parent;
 	loader = gcnew System::Windows::Forms::PictureBox();
-	loader->Image = System::Drawing::Image::FromFile(gcnew System::String(delivery::path_to_resource) + "loader_" + direction + ".png");
+	loader->Image = System::Drawing::Image::FromFile(gcnew System::String(delivery::path_to_resource) + "loader_" + direction + box + ".png");
 	loader->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
 	loader->BackColor = System::Drawing::Color::Transparent;
 	loader->Size = System::Drawing::Size(size, size);
@@ -73,6 +76,17 @@ bool LoaderAnimation::update()
 {
 	if (Car^ c = dynamic_cast<Car^>(transport))
 	{
+		int position;
+
+		if (total_steps / double(goal_steps) < 1 / 5.0) position = 0;
+		else if (total_steps / double(goal_steps) < 2 / 5.0) position = 1;
+		else if (total_steps / double(goal_steps) < 3 / 5.0) position = 2;
+		else if (total_steps / double(goal_steps) < 4 / 5.0) position = 3;
+		else position = 4;
+
+		if (transport->isLoading) c->download_pic->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + "download_" + position.ToString() + ".png");
+		else c->download_pic->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + "download_" + (4 - position).ToString() + ".png");
+		/*
 		if (transport->isLoading)
 		{
 			if (total_steps / double(goal_steps) < 1 / 4.0)
@@ -95,6 +109,7 @@ bool LoaderAnimation::update()
 			else
 				c->download_pic->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + "download_0.png");
 		}
+		*/
 	}
 
 	loader->Location = System::Drawing::Point(loader->Location.X + (direction == "Right" ? step : -step), y - (loader->Size.Height / 2));
@@ -103,7 +118,9 @@ bool LoaderAnimation::update()
 	if (current >= steps)
 	{
 		direction = (direction == "Right") ? "Left" : "Right";
-		loader->Image = System::Drawing::Image::FromFile(gcnew System::String(delivery::path_to_resource) + "loader_" + direction + ".png");
+		isBox = !isBox;
+		box = isBox ? "_box" : "";
+		loader->Image = System::Drawing::Image::FromFile(gcnew System::String(delivery::path_to_resource) + "loader_" + direction + box + ".png");
 		current = 0;
 	}
 
@@ -180,9 +197,9 @@ Store^ Transport::get_random_store()
 	return stores[rnd->Next(stores->Count)];
 }
 
-void Transport::play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps)
+void Transport::play_loader_animation(Structure^ source, Transport^ target, int size, int goal_steps, bool isBox)
 {
-	delivery::MyForm::active_animations->Add(gcnew LoaderAnimation(source, target, size, goal_steps));
+	delivery::MyForm::active_animations->Add(gcnew LoaderAnimation(source, target, size, goal_steps, isBox));
 }
 
 void Transport::choose_new_destination_point()
@@ -199,8 +216,9 @@ void Transport::choose_new_destination_point()
 
 void Transport::print_picture(Direction prev_direction)
 {
+	String^ temp = (name_number == "bicycle ¹3" || name_number == "car ¹2") ? "green_" : "";
 	if (prev_direction != direction)
-		pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + name + "_" + string(direction) + ".png");
+		pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + temp + name + "_" + string(direction) + ".png");
 
 	pic_box->Location = System::Drawing::Point(x - pic_box->Size.Width / 2, y - pic_box->Size.Height / 2);
 }
@@ -212,7 +230,7 @@ Transport::Transport(int x, int y, MyPoint^ departure_point, MyPoint^ global_des
 	this->isMoving = true;
 	this->isLoading = false;
 	this->isUnloading = false;
-	this->points_path = create_path(this, departure_point, global_destination_point);
+	this->points_path = create_path(departure_point, global_destination_point);
 	this->departure_point = departure_point;
 	this->destination_point = this->points_path[1];
 	this->index = 1;
@@ -227,7 +245,8 @@ Transport::Transport(int x, int y, MyPoint^ departure_point, MyPoint^ global_des
 
 Bicycle::Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ global_destination_point, System::Windows::Forms::Control^ parent) : Transport(x, y, departure_point, global_destination_point, parent)
 {
-	this->pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + "bicycle_Up.png");
+	String^ temp = name_number == "bicycle ¹3" ? "green_" : "";
+	this->pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + temp + "bicycle_Up.png");
 	this->pic_box->Location = System::Drawing::Point(x - 10, y - 20);
 	this->pic_box->MaximumSize = System::Drawing::Size(20, 40);
 	this->pic_box->Size = System::Drawing::Size(20, 40);
@@ -238,7 +257,8 @@ Bicycle::Bicycle(int x, int y, MyPoint^ departure_point, MyPoint^ global_destina
 
 Car::Car(int x, int y, MyPoint^ departure_point, MyPoint^ global_destination_point, System::Windows::Forms::Control^ parent) : Transport(x, y, departure_point, global_destination_point, parent)
 {
-	this->pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + "car_Up.png");
+	String^ temp = name_number == "car ¹2" ? "green_" : "";
+	this->pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + temp + "car_Up.png");
 	this->pic_box->Location = System::Drawing::Point(x - 20, y - 40);
 	this->pic_box->MaximumSize = System::Drawing::Size(40, 80);
 	this->pic_box->Size = System::Drawing::Size(40, 80);
@@ -298,10 +318,10 @@ void Warehouse::load(Transport^ sender, Structure^ target)
 
 	sender->isLoading = true;
 
-	sender->play_loader_animation(this, sender, 30, 80);
+	sender->play_loader_animation(this, sender, 30, 95, true);
 
 	sender->departure_point = this->point;
-	sender->points_path = create_path(sender, sender->departure_point, sender->get_random_store()->car_point);
+	sender->points_path = create_path(sender->departure_point, sender->get_random_store()->car_point);
 	sender->destination_point = sender->points_path[1];
 }
 
@@ -328,7 +348,7 @@ void Store::load(Transport^ sender, Structure^ target)
 
 	sender->isMoving = false;
 
-	sender->play_loader_animation(this, sender, 20, 40);
+	sender->play_loader_animation(this, sender, 20, 48, true);
 
 	if (Bicycle^ bicycle = dynamic_cast<Bicycle^>(sender))
 	{
@@ -345,7 +365,7 @@ void Store::load(Transport^ sender, Structure^ target)
 		MyPoint^ house_point = all_houses[idx];
 
 		sender->departure_point = this->bicycle_point;
-		sender->points_path = create_path(sender, sender->departure_point, house_point);
+		sender->points_path = create_path(sender->departure_point, house_point);
 		sender->destination_point = sender->points_path[1];
 	}
 }
@@ -358,10 +378,10 @@ void Store::unload(Transport^ sender, Structure^ target)
 
 	sender->isMoving = false;
 
-	sender->play_loader_animation(this, sender, 30, 80);
+	sender->play_loader_animation(this, sender, 30, 95, false);
 
 	sender->departure_point = this->car_point;
-	sender->points_path = create_path(sender, sender->departure_point, delivery::MyForm::points_car[0]);
+	sender->points_path = create_path(sender->departure_point, delivery::MyForm::points_car[0]);
 	sender->destination_point = sender->points_path[1];
 }
 
@@ -409,11 +429,11 @@ void House::unload(Transport^ sender, Structure^ target)
 
 	sender->isMoving = false;
 
-	sender->play_loader_animation(this, sender, 20, 40);
+	sender->play_loader_animation(this, sender, 20, 45, false);
 
 	Store^ random_store = sender->get_random_store();
 	sender->departure_point = this->point;
-	sender->points_path = create_path(sender, sender->departure_point, random_store->bicycle_point);
+	sender->points_path = create_path(sender->departure_point, random_store->bicycle_point);
 	sender->destination_point = sender->points_path[1];
 }
 

@@ -41,6 +41,7 @@ namespace delivery
 
 		static array<Structure^>^ structures;
 		static array<Transport^>^ transports;
+		static array<Transport^>^ added_transports;
 
 		static System::Collections::Generic::List<LoaderAnimation^>^ active_animations = gcnew System::Collections::Generic::List<LoaderAnimation^>();; // отложенная инициализация active_animations = gcnew List<LoaderAnimation^>();
 
@@ -48,43 +49,80 @@ namespace delivery
 
 	private:
 		System::Windows::Forms::Timer^ general_timer;
-	private: System::Windows::Forms::Timer^ day_night_timer;
+
+	private: System::Windows::Forms::CheckedListBox^ checkedListBox1;
+	private: System::Windows::Forms::TrackBar^ trackBar1;
+	private: System::Windows::Forms::Label^ label1;
+
 
 		   System::ComponentModel::IContainer^ components;
 
 #pragma region Windows Form Designer generated code
-		void InitializeComponent(void)
-		{
-			this->components = (gcnew System::ComponentModel::Container());
-			System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(MyForm::typeid));
-			this->general_timer = (gcnew System::Windows::Forms::Timer(this->components));
-			this->day_night_timer = (gcnew System::Windows::Forms::Timer(this->components));
-			this->SuspendLayout();
-			// 
-			// general_timer
-			// 
-			this->general_timer->Enabled = true;
-			this->general_timer->Tick += gcnew System::EventHandler(this, &MyForm::general_timer_Tick);
-			// 
-			// day_night_timer
-			// 
-			this->day_night_timer->Interval = 20000;
-			this->day_night_timer->Tick += gcnew System::EventHandler(this, &MyForm::day_night_timer_Tick);
-			// 
-			// MyForm
-			// 
-			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
-			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->BackgroundImage = (cli::safe_cast<System::Drawing::Image^>(resources->GetObject(L"$this.BackgroundImage")));
-			this->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Zoom;
-			this->ClientSize = System::Drawing::Size(564, 561);
-			this->DoubleBuffered = true;
-			this->Name = L"MyForm";
-			this->Text = L"MyForm";
-			this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
-			this->ResumeLayout(false);
+		   void InitializeComponent(void)
+		   {
+			   this->components = (gcnew System::ComponentModel::Container());
+			   System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(MyForm::typeid));
+			   this->general_timer = (gcnew System::Windows::Forms::Timer(this->components));
+			   this->checkedListBox1 = (gcnew System::Windows::Forms::CheckedListBox());
+			   this->trackBar1 = (gcnew System::Windows::Forms::TrackBar());
+			   this->label1 = (gcnew System::Windows::Forms::Label());
+			   (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->trackBar1))->BeginInit();
+			   this->SuspendLayout();
+			   // 
+			   // general_timer
+			   // 
+			   this->general_timer->Enabled = true;
+			   this->general_timer->Tick += gcnew System::EventHandler(this, &MyForm::general_timer_Tick);
+			   // 
+			   // checkedListBox1
+			   // 
+			   this->checkedListBox1->FormattingEnabled = true;
+			   this->checkedListBox1->Items->AddRange(gcnew cli::array< System::Object^  >(2) { L"Добавить машину", L"Добавить велосипед" });
+			   this->checkedListBox1->Location = System::Drawing::Point(577, 12);
+			   this->checkedListBox1->Name = L"checkedListBox1";
+			   this->checkedListBox1->Size = System::Drawing::Size(134, 34);
+			   this->checkedListBox1->TabIndex = 0;
+			   this->checkedListBox1->ItemCheck += gcnew System::Windows::Forms::ItemCheckEventHandler(this, &MyForm::checkedListBox1_ItemCheck);
+			   // 
+			   // trackBar1
+			   // 
+			   this->trackBar1->Location = System::Drawing::Point(577, 65);
+			   this->trackBar1->Maximum = 20;
+			   this->trackBar1->Minimum = 1;
+			   this->trackBar1->Name = L"trackBar1";
+			   this->trackBar1->Size = System::Drawing::Size(134, 45);
+			   this->trackBar1->TabIndex = 1;
+			   this->trackBar1->Value = 5;
+			   this->trackBar1->ValueChanged += gcnew System::EventHandler(this, &MyForm::trackBar1_ValueChanged);
+			   // 
+			   // label1
+			   // 
+			   this->label1->AutoSize = true;
+			   this->label1->Location = System::Drawing::Point(574, 49);
+			   this->label1->Name = L"label1";
+			   this->label1->Size = System::Drawing::Size(58, 13);
+			   this->label1->TabIndex = 2;
+			   this->label1->Text = L"Скорость:";
+			   // 
+			   // MyForm
+			   // 
+			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
+			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			   this->BackgroundImage = (cli::safe_cast<System::Drawing::Image^>(resources->GetObject(L"$this.BackgroundImage")));
+			   this->BackgroundImageLayout = System::Windows::Forms::ImageLayout::None;
+			   this->ClientSize = System::Drawing::Size(726, 561);
+			   this->Controls->Add(this->label1);
+			   this->Controls->Add(this->trackBar1);
+			   this->Controls->Add(this->checkedListBox1);
+			   this->DoubleBuffered = true;
+			   this->Name = L"MyForm";
+			   this->Text = L"MyForm";
+			   this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
+			   (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->trackBar1))->EndInit();
+			   this->ResumeLayout(false);
+			   this->PerformLayout();
 
-		}
+		   }
 #pragma endregion
 
 	private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e)
@@ -105,17 +143,28 @@ namespace delivery
 		House^ h4 = gcnew House(12);
 		House^ h5 = gcnew House(16);
 
-		Car^ car = gcnew Car(130, 440, points_car[1], points_car[0], this);
+		Car^ car1 = gcnew Car(130, 440, points_car[1], points_car[0], this);
 		Bicycle^ bicycle_1 = gcnew Bicycle(100, 405, points_bicycle[14], points_bicycle[1], this);
 		bicycle_1->name_number = "bicycle №1";
 		Bicycle^ bicycle_2 = gcnew Bicycle(400, 465, points_bicycle[21], points_bicycle[0], this);
 		bicycle_2->name_number = "bicycle №2";
 
+		Car^ car2 = gcnew Car(190, 45, points_car[3], points_car[0], this);
+		car2->name_number = "car №2";
+		car2->isMoving = false;
+		car2->pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + "green_car_Left.png");
+
+		Bicycle^ bicycle_3 = gcnew Bicycle(160, 100, points_bicycle[4], points_bicycle[1], this);
+		bicycle_3->name_number = "bicycle №3";
+		bicycle_3->isMoving = false;
+		bicycle_3->pic_box->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + "green_bicycle_Down.png");
+
 		bicycle_1->pic_box->BringToFront();
 		bicycle_2->pic_box->BringToFront();
+		bicycle_3->pic_box->BringToFront();
 
 		structures = gcnew array<Structure^> { wh, st1, st2, h1, h2, h3, h4, h5 };
-		transports = gcnew array<Transport^> { car, bicycle_1, bicycle_2 };
+		transports = gcnew array<Transport^> { car1, car2, bicycle_1, bicycle_2, bicycle_3 };
 
 		for each (Structure ^ s in structures)
 			for each (Transport ^ t in transports)
@@ -124,56 +173,52 @@ namespace delivery
 
 	private: System::Void general_timer_Tick(System::Object^ sender, System::EventArgs^ e)
 	{
-		/*
-		if (global_time == 300)
-		{
-			for each (Transport ^ t in transports)
-			{
-				if (Car^ c = dynamic_cast<Car^>(t))
-					c->points_path = create_path(c, c->departure_point, points_car[3]);
-				else if (Bicycle^ b = dynamic_cast<Bicycle^>(b))
-					b->points_path = create_path(b, b->departure_point, points_bicycle[23]);
-			}
-		}
-		*/
-
 		for each (Transport ^ t in transports)
 			t->move();
-
-
 
 		for (int i = 0; i < active_animations->Count; i++)
 			if (active_animations[i]->update())
 				active_animations->RemoveAt(i);
 	}
-	private: System::Void day_night_timer_Tick(System::Object^ sender, System::EventArgs^ e)
+	private: System::Void trackBar1_ValueChanged(System::Object^ sender, System::EventArgs^ e)
 	{
-		/*
-		daytime = !daytime;
-
-		String^ timeName;
-		switch (daytime)
+		general_timer->Interval = 500 / trackBar1->Value;
+	}
+	private: System::Void checkedListBox1_ItemCheck(System::Object^ sender, System::Windows::Forms::ItemCheckEventArgs^ e) {
+		String^ itemText = checkedListBox1->Items[e->Index]->ToString();
+		if (e->NewValue == System::Windows::Forms::CheckState::Checked)
 		{
-		case true: timeName = "День"; break;
-		case false: timeName = "Ночь"; break;
+			if (e->Index == 0) transports[1]->isMoving = true;
+			else if (e->Index == 1) transports[4]->isMoving = true;
 		}
-
-		//Console::WriteLine("Наступило: " + timeName);
-
-		for each (Transport ^ t in transports)
+		else if (e->NewValue == System::Windows::Forms::CheckState::Unchecked)
 		{
-			if (!daytime) // ночь
+			if (e->Index == 0)
 			{
-				// Отправляем за пределы карты
-				t->go_to_sleep_point();
+				Car^ c = dynamic_cast<Car^>(transports[1]);
+				c->isMoving = false;
+				c->x = 190;
+				c->y = 45;
+				c->index = 0;
+				c->points_path = create_path(points_car[3], points_car[0]);
+				c->departure_point = points_car[3];
+				c->destination_point = points_car[4];
+				c->download_pic->Location = System::Drawing::Point(c->x - 12, c->y - 2);
+				c->pic_box->Location = System::Drawing::Point(c->x - c->pic_box->Size.Width / 2, c->y - c->pic_box->Size.Height / 2);
 			}
-			else if (daytime) // утро
+			else if (e->Index == 1)
 			{
-				// Возвращаем обратно
-				t->return_from_sleep_point();
+				Bicycle^ b = dynamic_cast<Bicycle^>(transports[4]);
+				b->isMoving = false;
+				b->x = 160;
+				b->y = 100;
+				b->index = 0;
+				b->points_path = create_path(points_bicycle[4], points_bicycle[1]);
+				b->departure_point = points_car[4];
+				b->destination_point = points_car[8];
+				b->pic_box->Location = System::Drawing::Point(b->x - b->pic_box->Size.Width / 2, b->y - b->pic_box->Size.Height / 2);
 			}
 		}
-		*/
 	}
 };
 }
