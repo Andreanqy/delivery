@@ -214,8 +214,8 @@ namespace delivery
 				b->y = 100;
 				b->index = 0;
 				b->points_path = create_path(points_bicycle[4], points_bicycle[1]);
-				b->departure_point = points_car[4];
-				b->destination_point = points_car[8];
+				b->departure_point = points_bicycle[4];
+				b->destination_point = points_bicycle[8];
 				b->pic_box->Location = System::Drawing::Point(b->x - b->pic_box->Size.Width / 2, b->y - b->pic_box->Size.Height / 2);
 			}
 		}

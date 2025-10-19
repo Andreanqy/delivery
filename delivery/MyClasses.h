@@ -119,8 +119,6 @@ protected:
 ref class Bicycle : Transport
 {
 public:
-	int cargo_index;
-	int current_load;
 	array<System::Tuple<MyPoint^, int>^>^ delivery_plan;
 
 	void start_event() override;
