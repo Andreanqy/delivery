@@ -74,6 +74,17 @@ LoaderAnimation::LoaderAnimation(Structure^ source, Transport^ target, int size,
 
 bool LoaderAnimation::update()
 {
+	if (transport->departure_point == delivery::MyForm::points_car[3] || transport->departure_point == delivery::MyForm::points_bicycle[4])
+	{
+		if (Car^ c = dynamic_cast<Car^>(transport)) c->download_pic->Image = System::Drawing::Image::FromFile(delivery::MyForm::path_to_resource + "download_0.png");
+		transport->isLoading = false;
+		transport->isUnloading = false;
+		loader->Parent->Controls->Remove(loader);
+		delete loader;
+		loader = nullptr;
+		return true;
+	}
+
 	if (Car^ c = dynamic_cast<Car^>(transport))
 	{
 		int position;
